@@ -1,6 +1,7 @@
 import os
 from slack_bolt import App
 from dotenv import load_dotenv
+from CohereTasks import *
 
 # Create slack connection
 # Initialize Slack Bolt app
@@ -39,8 +40,9 @@ def total_at_capacity(channel_messages, MAX_CHANNELS=5):
 def verify_capacity(channel_id, channel_messages, MAX_MESSAGES=25, MAX_CHANNELS=5):
     # Reset if too many messages or too many channels
     # Case 1: Too many messages in the channel
+    # TO DO: Make a system to delete the oldest channel
     if channel_at_capacity(channel_messages, channel_id, MAX_MESSAGES):
-        channel_messages[channel_id] = []
+        del channel_messages[channel_id]
     # Case 2: Too many channels, clear the oldest channel which is the first key
     if total_at_capacity(channel_messages, MAX_CHANNELS):
         channel_messages.popitem(last=False)
@@ -88,13 +90,25 @@ def handle_valid_app_mention_message_content(message, channel_messages, channel_
     num_messages = int(message)
     # Step 2: Validate the number of messages
     num_messages = validate_num_messages(num_messages, channel_id, channel_messages, MAX_MESSAGES=25)
-    # Step 3: Debug output to slack
-    slack_app.client.chat_postMessage(channel=channel_id, text=f"Howdy @{who_asked}! Here are the last {num_messages} messages:")
+    # Step 3: Get the messages
+    messages = get_messages(channel_messages, channel_id, num_messages)
+    # Step 4: Generate the summary
+    summary = generate_summary(messages)
+    slack_app.client.chat_postMessage(channel=channel_id, text=f"Howdy @{who_asked}!! Here is a summary of the last {num_messages} messages:\n {summary} \n Hey, channel let me know if I missed something.")
     # Now pop remove the channel_id from the list
-    channel_messages = channel_messages[channel_id].pop()
+    del channel_messages[channel_id]
 
     return channel_messages
 
+# Helper function to get messages
+def get_messages(channel_messages, channel_id, num_messages):
+    # Step 1: Get the messages
+    messages = []
+    for i in range(num_messages):
+        messages.append(list(channel_messages[channel_id][-i].values())[0])
+    # Step 2: Convert to a string
+    messages = "\n".join(messages)
+    return messages
 
 # Helper function to validate the number of messages
 def validate_num_messages(num_messages, channel_id, channel_messages, MAX_MESSAGES=25):
@@ -111,7 +125,7 @@ def validate_num_messages(num_messages, channel_id, channel_messages, MAX_MESSAG
     elif num_messages > len(channel_messages[channel_id]):
         num_messages = len(channel_messages[channel_id])
     else:
-        num_messages = len(channel_messages[channel_id])
+        num_messages = num_messages
     return num_messages-1 # Subtract 1 to account for the message asking for the messages
 
 # Helper function to handle untelligible app mention message content
