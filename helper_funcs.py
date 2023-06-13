@@ -85,21 +85,17 @@ def not_bot(user_id, bot_user_id = slack_app.client.auth_test()["user_id"]):
 
 # Helper function to handle app mention message content
 def handle_app_mention_message(message, channel_messages, channel_id, who_asked):
-    # To Do: Make it understand the message, for now we will just refer to ints
-    # Step 1: Get the message content after the mention
-    message = message.split(" ", 1)[1]
-    # Case 1: Message is mention and an integer
-    if message.isdigit():
-        handle_valid_app_mention_message_content(message, channel_messages, channel_id, who_asked)
-        pass
-    else:
-        handle_app_mention_message_error(who_asked)
-        pass
+    handle_valid_app_mention_message_content(message, channel_messages, channel_id, who_asked)
+    '''
+    # To Do: Make it understand the intent by mapping it, but first see what has better results
+    '''
+
 
 # Helper function to handle valid app mention message content
 def handle_valid_app_mention_message_content(message, channel_messages, channel_id, who_asked):
-    # Step 1: Convert the message to an integer
-    num_messages = int(message)
+    # Step 1: Convert the message to an integer and also get the note
+    note = message.split(" ", 1)[1]
+    num_messages = 25
     # Step 2: Validate the number of messages
     num_messages = validate_num_messages(num_messages, channel_id, channel_messages, MAX_MESSAGES=25)
     # Step 3: Get the messages
@@ -109,7 +105,7 @@ def handle_valid_app_mention_message_content(message, channel_messages, channel_
         slack_app.client.chat_postMessage(channel=who_asked, text=f"Howdy! There isn't enough text to generate a summary. Try asking for more messages.")
         return channel_messages
     # Step 5 Generate the summary
-    summary = generate_summary(messages)
+    summary = generate_summary(messages, note)
     slack_app.client.chat_postMessage(channel=channel_id, text=f"Howdy <@{who_asked}>!! Here is a summary of the last {num_messages} messages:\n {summary} \n Hey, channel let me know if I missed something.")
     # Now pop remove the channel_id from the list
     del channel_messages[channel_id]

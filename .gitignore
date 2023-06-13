@@ -1,2 +1,5 @@
 venv/
+training/
 .env
+intent_model.ipynb
+intent.csv
