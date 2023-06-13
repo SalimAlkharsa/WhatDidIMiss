@@ -48,12 +48,18 @@ def verify_capacity(channel_id, channel_messages, MAX_MESSAGES=25, MAX_CHANNELS=
         channel_messages.popitem(last=False)
     return channel_messages
 
+# Helper function to make sure bot not mentioned
+def bot_mentioned(text, bot_user_id = slack_app.client.auth_test()["user_id"]):
+    if "@"+str(bot_user_id) in text:
+        return 1
+    else:
+        return 0
 
 # Helper function to add message to channel
 def add_message_to_channel(channel_id, user_id, text, channel_messages):
     if not_bot:
         # If message mentions the bot, do nothing
-        if "@U05BVB8RT9B" in text: # TO DO clean this by making a helper function, this is not generalizable
+        if bot_mentioned(text):
             return channel_messages
         # Check if channel exists
         if channel_id not in channel_messages:
@@ -71,6 +77,8 @@ def add_message_to_channel(channel_id, user_id, text, channel_messages):
 # Helper function to verify poster is not the bot
 def not_bot(user_id, bot_user_id = slack_app.client.auth_test()["user_id"]):
     return user_id != bot_user_id
+
+
 
 ####################
 # Helpers for handling app mentions
@@ -102,17 +110,23 @@ def handle_valid_app_mention_message_content(message, channel_messages, channel_
         return channel_messages
     # Step 5 Generate the summary
     summary = generate_summary(messages)
-    slack_app.client.chat_postMessage(channel=channel_id, text=f"Howdy @{who_asked}!! Here is a summary of the last {num_messages} messages:\n {summary} \n Hey, channel let me know if I missed something.")
+    slack_app.client.chat_postMessage(channel=channel_id, text=f"Howdy <@{who_asked}>!! Here is a summary of the last {num_messages} messages:\n {summary} \n Hey, channel let me know if I missed something.")
     # Now pop remove the channel_id from the list
     del channel_messages[channel_id]
     return channel_messages
 
-# Helper function to get messages
+# Helper function to get messages 
+# TO DO: Add user name to the message
 def get_messages(channel_messages, channel_id, num_messages):
     # Step 1: Get the messages
     messages = []
     total_messages = len(channel_messages[channel_id])
     for i in range(total_messages - num_messages, total_messages):
+        # Append the sender
+        userID = list(channel_messages[channel_id][i].keys())[0]
+        userName = slack_app.client.users_info(user=userID)["user"]["real_name"]
+        messages.append(userName+" says:")
+        # Append the message
         messages.append(list(channel_messages[channel_id][i].values())[0])
     # Step 2: Convert to a string
     messages = "\n".join(messages)
