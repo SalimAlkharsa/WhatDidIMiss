@@ -52,6 +52,9 @@ def verify_capacity(channel_id, channel_messages, MAX_MESSAGES=25, MAX_CHANNELS=
 # Helper function to add message to channel
 def add_message_to_channel(channel_id, user_id, text, channel_messages):
     if not_bot:
+        # If message mentions the bot, do nothing
+        if "@U05BVB8RT9B" in text: # TO DO clean this by making a helper function, this is not generalizable
+            return channel_messages
         # Check if channel exists
         if channel_id not in channel_messages:
             # If not, create it
@@ -62,6 +65,7 @@ def add_message_to_channel(channel_id, user_id, text, channel_messages):
         channel_messages[channel_id].append({user_id: text})
         # Done
         return channel_messages
+    return channel_messages
 
 
 # Helper function to verify poster is not the bot
@@ -92,20 +96,24 @@ def handle_valid_app_mention_message_content(message, channel_messages, channel_
     num_messages = validate_num_messages(num_messages, channel_id, channel_messages, MAX_MESSAGES=25)
     # Step 3: Get the messages
     messages = get_messages(channel_messages, channel_id, num_messages)
-    # Step 4: Generate the summary
+    # Step 4: Ensure the messages are not too short, min 250 characters
+    if len(messages) < 251:
+        slack_app.client.chat_postMessage(channel=who_asked, text=f"Howdy! There isn't enough text to generate a summary. Try asking for more messages.")
+        return channel_messages
+    # Step 5 Generate the summary
     summary = generate_summary(messages)
     slack_app.client.chat_postMessage(channel=channel_id, text=f"Howdy @{who_asked}!! Here is a summary of the last {num_messages} messages:\n {summary} \n Hey, channel let me know if I missed something.")
     # Now pop remove the channel_id from the list
     del channel_messages[channel_id]
-
     return channel_messages
 
 # Helper function to get messages
 def get_messages(channel_messages, channel_id, num_messages):
     # Step 1: Get the messages
     messages = []
-    for i in range(num_messages):
-        messages.append(list(channel_messages[channel_id][-i].values())[0])
+    total_messages = len(channel_messages[channel_id])
+    for i in range(total_messages - num_messages, total_messages):
+        messages.append(list(channel_messages[channel_id][i].values())[0])
     # Step 2: Convert to a string
     messages = "\n".join(messages)
     return messages
@@ -126,7 +134,7 @@ def validate_num_messages(num_messages, channel_id, channel_messages, MAX_MESSAG
         num_messages = len(channel_messages[channel_id])
     else:
         num_messages = num_messages
-    return num_messages-1 # Subtract 1 to account for the message asking for the messages
+    return num_messages
 
 # Helper function to handle untelligible app mention message content
 def handle_app_mention_message_error(who_asked):
