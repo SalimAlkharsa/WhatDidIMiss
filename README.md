@@ -4,6 +4,9 @@ Welcome to What Did I Miss, a Slack bot that helps you catch up on important dis
 
 ## How it Works
 
+**Demo** 
+<img width="1000" alt="Screenshot_2023-06-13_at_9 24 33_PM" src="https://github.com/SalimAlkharsa/WhatDidIMiss/assets/61260042/e80d5806-6135-45ff-b1ac-abf2a59a6d58">
+
 The application server logs a maximum of 25 messages across 5 channels. When a user mentions the bot followed by a message, the bot will return a short bullet point answer with emphasis on the question. For example, if you ask "@what did I miss, was there anything important from the meeting?" the bot will provide a summary that focuses more on meeting tasks.
 
 The summary AI is powered by Cohere's summary endpoint, which utilizes advanced natural language processing techniques. If there is not enough text to summarize or any other error occurs, the bot will message the user, informing them that there isn't enough text to generate a summary.
