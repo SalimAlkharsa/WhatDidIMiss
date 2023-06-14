@@ -60,4 +60,4 @@ def handle_mentions(payload, channel_messages):
 # Start application
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
-    app.run(port=port, debug=True)
+    app.run(port=port, debug=False)
